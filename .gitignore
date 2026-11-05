@@ -1,0 +1,10 @@
+.env
+.env.testing
+/storage/logs/*
+!/storage/logs/.gitkeep
+/storage/uploads/*
+!/storage/uploads/.gitkeep
+/storage/exports/*
+!/storage/exports/.gitkeep
+/storage/backups/*
+!/storage/backups/.gitkeep
