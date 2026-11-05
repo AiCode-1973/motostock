@@ -44,6 +44,21 @@ final class InstallTest extends TestCase
         $this->assertRedirectTo('/plataforma', $this->browser()->login('admin@empresa.test', 'senha-muito-forte-1'));
     }
 
+    public function testMigrationCanBeRetriedAfterPartialRun(): void
+    {
+        // Simula uma tentativa anterior que criou as tabelas mas não registrou a migration.
+        $this->db->execute("DELETE FROM schema_migrations WHERE version = '001_schema'");
+        $this->assertSame(['001_schema'], \App\Support\Migrator::pending($this->db));
+        $this->assertSame(['001_schema'], \App\Support\Migrator::run($this->db));
+        $this->assertSame([], \App\Support\Migrator::pending($this->db));
+        // E a instalação pelo navegador conclui normalmente nesse estado.
+        $this->db->execute("DELETE FROM schema_migrations WHERE version = '001_schema'");
+        $br = $this->browser();
+        $br->get('/instalacao', ['token' => self::TOKEN]);
+        $this->assertStatus(303, $br->post('/instalacao', ['token' => self::TOKEN, 'name' => 'Admin', 'email' => 'adm@x.test', 'password' => 'senha-muito-forte-1', 'password_confirmation' => 'senha-muito-forte-1']));
+        $this->assertSame('admin', $this->db->value("SELECT platform_role FROM users WHERE email = 'adm@x.test'"));
+    }
+
     public function testAdminPasswordNeedsTwelveChars(): void
     {
         $br = $this->browser();

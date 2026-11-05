@@ -50,7 +50,13 @@ final class InstallController extends Controller
             throw new \App\Core\BusinessException('Sem conexão com o banco. Confira DB_* no .env.');
         }
         $db = Database::connect();
-        $applied = Migrator::run($db);
+        try {
+            $applied = Migrator::run($db);
+        } catch (\RuntimeException $e) {
+            // Mostra o erro real do banco (página protegida por token) para dar para corrigir sem acesso aos logs.
+            error_log('[MotoStock install] ' . $e->getMessage());
+            throw new \App\Core\BusinessException('Não foi possível criar as tabelas. ' . mb_substr($e->getMessage(), 0, 400));
+        }
         if (!$db->value("SELECT 1 FROM users WHERE platform_role = 'admin' LIMIT 1")) {
             $d = Validator::check($r->post, ['name' => 'required|max:120', 'email' => 'required|email|max:160', 'password' => 'required|password'],
                 ['name' => 'Nome', 'email' => 'E-mail', 'password' => 'Senha']);

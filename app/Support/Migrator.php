@@ -31,7 +31,14 @@ final class Migrator
             $sql = (string) file_get_contents(BASE_PATH . '/database/migrations/' . $version . '.sql');
             $sql = preg_replace('/^\s*--.*$/m', '', $sql);
             foreach (array_filter(array_map('trim', explode(';', $sql))) as $statement) {
-                $db->pdo()->exec($statement);
+                // Idempotente: se uma tentativa anterior parou no meio, as tabelas já criadas são puladas.
+                $statement = preg_replace('/^CREATE TABLE (?!IF NOT EXISTS)/i', 'CREATE TABLE IF NOT EXISTS ', $statement) ?? $statement;
+                try {
+                    $db->pdo()->exec($statement);
+                } catch (\PDOException $e) {
+                    preg_match('/^\s*(CREATE TABLE IF NOT EXISTS|ALTER TABLE|INSERT INTO|UPDATE|CREATE INDEX)\s+`?(\w+)/i', $statement, $m);
+                    throw new \RuntimeException(sprintf('Migration %s falhou%s: %s', $version, isset($m[2]) ? " na tabela {$m[2]}" : '', $e->getMessage()), 0, $e);
+                }
             }
             $db->insert('schema_migrations', ['version' => $version, 'applied_at' => gmdate('Y-m-d H:i:s')]);
             $applied[] = $version;

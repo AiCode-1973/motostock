@@ -3,7 +3,7 @@
 O domínio hoje mostra a **versão antiga** (Vue + API). A nova substitui essa versão; a antiga é **guardada** numa pasta `_versao_anterior_<data>` no servidor (bloqueada para a web), nada é apagado.
 
 Arquivos que já estão prontos neste computador (fora do Git):
-- `deploy/.env.production`: com `APP_KEY` e `SETUP_TOKEN` já gerados. **Falta só o banco.** Guarde uma cópia da `APP_KEY` no cofre de senhas.
+- `deploy/.env.production`: com `APP_KEY` já gerada. **Falta o banco e o administrador.** Guarde uma cópia da `APP_KEY` no cofre de senhas.
 - `deploy/.deploy.env`: com `DEPLOY_TOKEN` gerado. **Falta usuário e senha do FTP** e conferir `FTP_PATH`.
 
 ## Primeira instalação
@@ -15,7 +15,9 @@ Arquivos que já estão prontos neste computador (fora do Git):
 4. **SSL/TLS Status**: confirme o certificado do domínio.
 
 ### 2. Neste computador
-1. Em `deploy/.env.production`, preencha `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` (em geral `DB_HOST=localhost`, `DB_PORT=3306`).
+1. Em `deploy/.env.production`, preencha:
+   - o banco: `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` (em geral `DB_HOST=localhost`, `DB_PORT=3306`);
+   - o administrador: `ADMIN_NAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` (12+ caracteres). A conta é criada no envio e a senha é apagada do `.env` do servidor e deste arquivo logo em seguida.
 2. Em `deploy/.deploy.env`, preencha `FTP_USER`, `FTP_PASS` e confira `FTP_PATH`.
 3. Rode:
    ```powershell
@@ -25,15 +27,15 @@ Arquivos que já estão prontos neste computador (fora do Git):
 
    **Sem FTP?** Rode `.\deploy\deploy.ps1 -SomentePacote`, envie `deploy\dist\motostock-pacote.zip` e `deploy\dist\motostock-extrair.php` pelo **Gerenciador de Arquivos** do cPanel para a pasta raiz do domínio e abra o endereço que o script mostra (`/motostock-extrair.php?token=…`).
 
-### 3. Criar o administrador
-1. Abra `https://motostock.aicode.dev.br/instalacao?token=<SETUP_TOKEN do .env.production>`.
-2. Todos os itens devem estar "OK". Preencha nome, e-mail e senha (12+ caracteres) → **Instalar**.
-3. Entre em `/entrar`: o sistema pede para ativar a **verificação em duas etapas** (obrigatória para a plataforma).
-4. Em **Plataforma › Planos**, crie pelo menos um plano público (preço e limites). Sem plano, o cadastro de lojas fica fechado.
-5. No **Gerenciador de Arquivos**, edite o `.env` do servidor e **apague o valor de `SETUP_TOKEN`**.
+### 3. Primeiro acesso
+O resultado do envio deve mostrar `✓ Administrador criado: <seu e-mail>`.
+1. Entre em `https://motostock.aicode.dev.br/entrar` com esse e-mail e senha. O sistema pede para ativar a **verificação em duas etapas** (obrigatória para a plataforma): use o Google ou Microsoft Authenticator.
+2. Em **Plataforma › Planos**, crie pelo menos um plano público (preço e limites). Sem plano, o cadastro de lojas fica fechado.
+
+**Plano B** (se o administrador não for criado, por exemplo banco errado no primeiro envio): corrija o `.env` do servidor e abra `https://motostock.aicode.dev.br/instalacao?token=<SETUP_TOKEN do .env.production>`, que verifica o servidor e tem um formulário para criar a conta. Depois, apague o valor de `SETUP_TOKEN` no `.env` do servidor.
 
 ### 4. Cron (cPanel › Cron Jobs)
-A cada 15 minutos (cancela pedidos não pagos no prazo, encerra testes vencidos, limpa limites de login). Use o comando que a tela de instalação mostra, por exemplo:
+A cada 15 minutos (cancela pedidos não pagos no prazo, encerra testes vencidos, limpa limites de login). Troque `<conta>` e `<pasta-do-domínio>` pelos seus (a pasta aparece em cPanel › Domínios):
 ```
 */15 * * * * php /home/<conta>/<pasta-do-domínio>/bin/cron.php >> /home/<conta>/<pasta-do-domínio>/storage/logs/cron.log 2>&1
 ```

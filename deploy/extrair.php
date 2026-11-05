@@ -3,7 +3,8 @@
 // Uso: https://motostock.aicode.dev.br/motostock-extrair.php?token=DEPLOY_TOKEN
 // 1. Na primeira vez, move a versão anterior (api/, frontend/, index.html…) para _versao_anterior_<data>/ (nada é apagado).
 // 2. Extrai o pacote. O .env do servidor nunca é sobrescrito; na primeira instalação, .env.production vira .env.
-// 3. Cria as pastas de storage e aplica as migrations pendentes.
+// 3. Cria as pastas de storage, aplica as migrations pendentes e, na primeira vez, cria o administrador
+//    com ADMIN_EMAIL/ADMIN_PASSWORD do .env (a senha é apagada do .env logo em seguida).
 // 4. Apaga o pacote e a si mesmo.
 
 declare(strict_types=1);
@@ -98,6 +99,10 @@ if (!is_file($root . '/.env')) {
         require_once $root . '/app/bootstrap.php';
         $applied = App\Support\Migrator::run(App\Core\Database::connect());
         $log[] = $applied ? '✓ Banco atualizado: ' . implode(', ', $applied) : '✓ Banco já estava atualizado';
+        $adminMsg = App\Support\FirstAdmin::fromEnv(App\Core\Database::connect(), $root . '/.env');
+        if ($adminMsg !== '') {
+            $log[] = (str_starts_with($adminMsg, 'Administrador criado') ? '✓ ' : '! ') . $adminMsg;
+        }
     } catch (Throwable $e) {
         $log[] = '! Banco não atualizado agora: ' . $e->getMessage() . ' — confira DB_* no .env e abra /instalacao?token=SETUP_TOKEN.';
     }
@@ -110,4 +115,4 @@ $log[] = '✓ Pacote e extrator removidos do servidor';
 
 echo '<!doctype html><meta charset="utf-8"><title>MotoStock</title><body style="font-family:sans-serif;max-width:720px;margin:40px auto">';
 echo '<h1>Atualização concluída</h1><pre>' . htmlspecialchars(implode("\n", $log)) . '</pre>';
-echo '<p>Primeira instalação? Abra <code>/instalacao?token=SETUP_TOKEN</code> para criar o administrador.</p><p><a href="/">Abrir o MotoStock</a></p>';
+echo '<p><a href="/entrar">Entrar no MotoStock</a></p>';

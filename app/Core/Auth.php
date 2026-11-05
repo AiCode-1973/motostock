@@ -35,7 +35,7 @@ final class Auth
         }
         $user = Database::connect()->fetch('SELECT * FROM users WHERE id = ? AND status = \'active\'', [$id]);
         // Troca de senha encerra as outras sessões.
-        if (!$user || (string) Session::get('pwd_stamp') !== (string) $user['password_changed_at']) {
+        if (!$user || !hash_equals(self::stamp($user), (string) Session::get('pwd_stamp'))) {
             self::logout();
             return null;
         }
@@ -56,10 +56,16 @@ final class Auth
         Session::set('user_id', (int) $user['id']);
         Session::set('auth_at', Clock::ts());
         Session::set('auth_last', Clock::ts());
-        Session::set('pwd_stamp', (string) $user['password_changed_at']);
+        Session::set('pwd_stamp', self::stamp($user));
         Database::connect()->execute('UPDATE users SET last_login_at = ? WHERE id = ?', [Clock::now(), $user['id']]);
         self::$user = null;
         self::$loaded = false;
+    }
+
+    /** Impressão da senha atual: muda a cada troca (o hash tem sal novo), mesmo dentro do mesmo segundo. */
+    private static function stamp(array $user): string
+    {
+        return substr(hash('sha256', 'pwd|' . $user['password_hash']), 0, 32);
     }
 
     public static function logout(): void
@@ -81,7 +87,8 @@ final class Auth
             return null;
         }
         if (password_needs_rehash($user['password_hash'], PASSWORD_DEFAULT)) {
-            Database::connect()->execute('UPDATE users SET password_hash = ? WHERE id = ?', [password_hash($password, PASSWORD_DEFAULT), $user['id']]);
+            $user['password_hash'] = password_hash($password, PASSWORD_DEFAULT);
+            Database::connect()->execute('UPDATE users SET password_hash = ? WHERE id = ?', [$user['password_hash'], $user['id']]);
         }
         return $user;
     }

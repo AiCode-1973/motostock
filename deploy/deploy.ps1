@@ -108,6 +108,13 @@ $url = "$appUrl/motostock-extrair.php?token=$token"
 try {
     $resp = Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 300
     ($resp.Content -replace '<[^>]+>', "`n") -split "`n" | Where-Object { $_.Trim() } | ForEach-Object { Write-Host "      $_" }
+    # Administrador criado (ou já existente): a senha não precisa mais ficar no arquivo local.
+    if ($resp.Content -match 'Administrador (criado|j. existia)' -and (Test-Path $envProd)) {
+        $txt = [System.IO.File]::ReadAllText($envProd, [System.Text.Encoding]::UTF8)
+        $txt = [regex]::Replace($txt, '(?m)^ADMIN_PASSWORD=.*$', 'ADMIN_PASSWORD=')
+        [System.IO.File]::WriteAllText($envProd, $txt, (New-Object System.Text.UTF8Encoding($false)))
+        Write-Host '      Senha do administrador apagada de deploy\.env.production' -ForegroundColor Green
+    }
 } catch {
     Write-Host "Não consegui confirmar. Abra no navegador: $url" -ForegroundColor Yellow
 }
