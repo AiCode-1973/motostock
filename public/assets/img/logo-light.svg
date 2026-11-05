@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 48" role="img" aria-label="MotoStock">
+  <g transform="translate(24 24)">
+    <circle r="20" fill="#f97316"/>
+    <circle r="12.5" fill="none" stroke="#161b22" stroke-width="4"/>
+    <circle r="4" fill="#161b22"/>
+    <g stroke="#161b22" stroke-width="3" stroke-linecap="round">
+      <line x1="0" y1="-12" x2="0" y2="-4"/><line x1="0" y1="12" x2="0" y2="4"/>
+      <line x1="-12" y1="0" x2="-4" y2="0"/><line x1="12" y1="0" x2="4" y2="0"/>
+    </g>
+  </g>
+  <text x="52" y="32" font-family="Segoe UI, Roboto, Arial, sans-serif" font-size="24" font-weight="800" fill="#ffffff">Moto<tspan fill="#f97316">Stock</tspan></text>
+</svg>
