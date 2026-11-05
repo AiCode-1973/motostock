@@ -1,0 +1,35 @@
+# MotoStock · .htaccess da RAIZ do domínio em produção (vai como .htaccess no pacote).
+# O domínio aponta para a pasta do projeto; tudo é servido a partir de public/.
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # Certificado SSL (AutoSSL / Let's Encrypt) precisa deste caminho livre.
+    RewriteRule ^\.well-known/ - [L]
+
+    # Sempre HTTPS
+    RewriteCond %{HTTPS} !=on
+    RewriteCond %{HTTP:X-Forwarded-Proto} !=https
+    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+
+    # Extrator de atualização (existe só durante o envio; protegido por token)
+    RewriteRule ^motostock-extrair\.php$ - [L]
+
+    # Nada fora de public/ é acessível pela web
+    RewriteRule ^(app|bin|database|deploy|docs|storage|tests|_versao_anterior[^/]*)(/|$) - [F,L]
+    RewriteRule (^|/)\. - [F,L]
+    RewriteRule ^(README\.md|composer\.(json|lock))$ - [F,L]
+
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+</IfModule>
+
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>

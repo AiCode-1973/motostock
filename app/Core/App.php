@@ -47,8 +47,9 @@ final class App
     /** @return array{0: Response, 1: string} */
     private function dispatch(Request $req): array
     {
-        $db = Database::connect();
-        $store = str_starts_with($req->path, '/webhooks/') ? null : TenantResolver::resolve($db, $req);
+        // O instalador precisa abrir mesmo sem banco configurado, para mostrar o diagnóstico.
+        $noTenant = str_starts_with($req->path, '/webhooks/') || $req->path === '/instalacao';
+        $store = $noTenant ? null : TenantResolver::resolve(Database::connect(), $req);
         $path = $req->path;
         if ($store) {
             $path = '@store' . ($store['path'] === '' ? '/' : $store['path']);
@@ -79,7 +80,7 @@ final class App
 
         $guard = match ($o['area']) {
             'store' => $this->guardStore($store),
-            'panel' => $this->guardPanel($db, $req, $o),
+            'panel' => $this->guardPanel(Database::connect(), $req, $o),
             'platform' => $this->guardPlatform($req, $o),
             default => $this->guardMain($req, $o),
         };

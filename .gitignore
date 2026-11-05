@@ -8,3 +8,6 @@
 !/storage/exports/.gitkeep
 /storage/backups/*
 !/storage/backups/.gitkeep
+/deploy/.deploy.env
+/deploy/.env.production
+/deploy/dist/

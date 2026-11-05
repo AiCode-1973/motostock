@@ -30,6 +30,10 @@ return static function (Router $r): void {
     $r->post('/conta/mfa/desativar', [Main\AccountController::class, 'mfaDisable'], ['auth' => true]);
     $r->post('/conta/trocar-loja', [Main\AccountController::class, 'switchTenant'], ['auth' => true]);
 
+    // ===== Instalação/atualização sem terminal (exige SETUP_TOKEN no .env) =====
+    $r->get('/instalacao', [Main\InstallController::class, 'show']);
+    $r->post('/instalacao', [Main\InstallController::class, 'run']);
+
     // ===== Webhooks (sem CSRF; autenticados por assinatura do provedor) =====
     $r->post('/webhooks/mercadopago/{uuid}', [WebhookController::class, 'mercadoPago'], ['csrf' => false]);
     $r->post('/webhooks/simulado/{uuid}', [WebhookController::class, 'simulated'], ['csrf' => false]);
