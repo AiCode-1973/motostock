@@ -39,7 +39,7 @@ final class SimulatedGateway implements PaymentGateway
              VALUES (?, ?, ?, \'pending\', ?, ?) ON DUPLICATE KEY UPDATE updated_at = updated_at',
             [$externalId, $payment['uuid'], (int) $payment['amount_cents'], Clock::now(), Clock::now()]
         );
-        return new CheckoutResult($externalId, Url::store('/pagamento-simulado/' . $payment['uuid']));
+        return new CheckoutResult($externalId, Url::store('/pagamento-simulado/' . $payment['uuid'], ['retorno' => $urls['return']]));
     }
 
     /** O "provedor" muda o estado e assina a notificação, como faria um gateway real. */

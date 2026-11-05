@@ -116,8 +116,10 @@ final class CustomerService
     {
         $existing = $this->db->fetch('SELECT id FROM customers WHERE tenant_id = ? AND email = ?', [$this->tenantId, $d['email']]);
         if ($existing) {
-            $this->db->execute('UPDATE customers SET name = ?, phone = ?, privacy_accepted_at = ?, privacy_version = ?, updated_at = ? WHERE tenant_id = ? AND id = ?',
-                [$d['name'], $d['phone'], Clock::now(), $privacyVersion, Clock::now(), $this->tenantId, $existing['id']]);
+            // Não sobrescreve nome/telefone do cadastro: quem compra sem login não prova ser o dono do e-mail.
+            // Os dados informados ficam no próprio pedido.
+            $this->db->execute('UPDATE customers SET privacy_accepted_at = ?, privacy_version = ?, updated_at = ? WHERE tenant_id = ? AND id = ?',
+                [Clock::now(), $privacyVersion, Clock::now(), $this->tenantId, $existing['id']]);
             return (int) $existing['id'];
         }
         return $this->db->insert('customers', [
