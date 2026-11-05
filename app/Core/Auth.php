@@ -74,7 +74,7 @@ final class Auth
     {
         $user = Database::connect()->fetch('SELECT * FROM users WHERE email = ?', [mb_strtolower(trim($email))]);
         static $dummy = null;
-        $dummy ??= password_hash(random_bytes(12), PASSWORD_DEFAULT);
+        $dummy ??= password_hash(bin2hex(random_bytes(12)), PASSWORD_DEFAULT);
         $hash = $user['password_hash'] ?? $dummy;
         $ok = password_verify($password, $hash);
         if (!$user || !$ok || $user['status'] !== 'active') {

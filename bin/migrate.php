@@ -5,7 +5,7 @@ declare(strict_types=1);
 // Uso: php bin/migrate.php            (aplica pendentes)
 //      php bin/migrate.php --fresh    (APAGA tudo e recria — só desenvolvimento/testes)
 
-require dirname(__DIR__) . '/app/bootstrap.php';
+require_once dirname(__DIR__) . '/app/bootstrap.php';
 
 use App\Core\Database;
 use App\Core\Env;

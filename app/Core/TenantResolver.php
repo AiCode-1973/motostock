@@ -38,7 +38,8 @@ final class TenantResolver
             if (str_contains($label, '.') || in_array($label, self::RESERVED, true)) {
                 return null;
             }
-            return self::bySlug($db, $label);
+            // Subdomínio de loja que não existe: 404, nunca o site principal.
+            return self::bySlug($db, $label) ?? throw HttpException::notFound('Loja não encontrada.');
         }
         if (!Env::bool('ALLOW_CUSTOM_DOMAINS', false)) {
             return null;

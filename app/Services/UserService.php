@@ -41,7 +41,7 @@ final class UserService
                 $isNew = true;
                 $id = $this->db->insert('users', [
                     'name' => $d['name'], 'email' => $d['email'],
-                    'password_hash' => password_hash(random_bytes(24), PASSWORD_DEFAULT),
+                    'password_hash' => password_hash(bin2hex(random_bytes(24)), PASSWORD_DEFAULT),
                     'password_changed_at' => Clock::now(), 'created_at' => Clock::now(), 'updated_at' => Clock::now(),
                 ]);
                 $user = ['id' => $id, 'email' => $d['email'], 'name' => $d['name']];

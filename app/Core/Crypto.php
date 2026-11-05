@@ -3,9 +3,15 @@ declare(strict_types=1);
 
 namespace App\Core;
 
-/** Cifra segredos guardados no banco (MFA, credenciais de gateway) com a APP_KEY (libsodium). */
+/**
+ * Cifra segredos guardados no banco (MFA, credenciais de gateway) com AES-256-GCM e a APP_KEY.
+ * OpenSSL está presente em praticamente toda hospedagem PHP (libsodium nem sempre vem ativa).
+ * Formato: base64("v1" . iv[12] . tag[16] . cifra).
+ */
 final class Crypto
 {
+    private const CIPHER = 'aes-256-gcm';
+
     private static function key(): string
     {
         $raw = (string) Env::get('APP_KEY', '');
@@ -15,13 +21,18 @@ final class Crypto
         if (strlen($raw) < 32) {
             throw new \RuntimeException('APP_KEY ausente ou curta. Gere com: php bin/generate-key.php');
         }
-        return sodium_crypto_generichash($raw, '', SODIUM_CRYPTO_SECRETBOX_KEYBYTES);
+        return hash('sha256', 'motostock-enc|' . $raw, true);
     }
 
     public static function encrypt(string $plain): string
     {
-        $nonce = random_bytes(SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
-        return base64_encode($nonce . sodium_crypto_secretbox($plain, $nonce, self::key()));
+        $iv = random_bytes(12);
+        $tag = '';
+        $cipher = openssl_encrypt($plain, self::CIPHER, self::key(), OPENSSL_RAW_DATA, $iv, $tag, 'motostock', 16);
+        if ($cipher === false) {
+            throw new \RuntimeException('Falha ao cifrar.');
+        }
+        return base64_encode('v1' . $iv . $tag . $cipher);
     }
 
     public static function decrypt(?string $encoded): ?string
@@ -30,14 +41,10 @@ final class Crypto
             return null;
         }
         $bin = base64_decode($encoded, true);
-        if ($bin === false || strlen($bin) <= SODIUM_CRYPTO_SECRETBOX_NONCEBYTES) {
+        if ($bin === false || strlen($bin) < 31 || !str_starts_with($bin, 'v1')) {
             return null;
         }
-        $plain = sodium_crypto_secretbox_open(
-            substr($bin, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES),
-            substr($bin, 0, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES),
-            self::key()
-        );
+        $plain = openssl_decrypt(substr($bin, 30), self::CIPHER, self::key(), OPENSSL_RAW_DATA, substr($bin, 2, 12), substr($bin, 14, 16), 'motostock');
         return $plain === false ? null : $plain;
     }
 
